@@ -1,0 +1,11 @@
+Date,Sleep Time,Wake Time,Duration,Notes
+2025-11-04,22:04,06:00,7h 56m,"Bad sleep. Woke up at about 1:00am and went to bed again at about 1:30am, because of diarrhea."
+2025-11-03,21:56,06:00,8h 4m,"Good sleep. Fell asleep quickly, woke up easily. Woke up twice in the middle of the night."
+2025-11-02,22:07,06:57,8h 50m,"Slept well. Woke up at night twice without the reason. Vivid dreams. Feels good on waking up. Woke up without alarm.
+I ate some cutlet and boiled rice 3 hours before going to bed."
+2025-11-01,21:58,06:00,8h 2m,"Feel good. Didn' see or forgot a dream. Hard to wake up."
+2025-10-31,22:06,06:00,7h 54m,"Was hard to wake up. Vivid dreams. I felt a slight headache on waking up, but then felt better. Good mood."
+2025-10-30,22:05,07:06,9h 1m,"it was hard to find a comfortable sleeping position at the start of sleep. Woke up with a slight headache, but by miself without alarm. Forgot how turned off or didn't hear the alarm."
+2025-10-29,22:53,06:00,7h 7m,"Hood sleep, vivid dreams."
+2025-10-28,23:47,07:00,7h 13m,"Good sleep. Easier waking up."
+2025-10-27,22:11,09:36,11h 25m,"Mild headache, feels a little passive."
