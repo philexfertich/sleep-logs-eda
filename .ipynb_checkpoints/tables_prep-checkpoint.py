@@ -19,22 +19,23 @@ with mext.MarkdownExtractor(md_file) as md:
         "Stage": "Notes"
     })
 
-    # Change to timestamp in minutes for compatibility
+    # For compatibility:
+    # - Remove unnecessary column
+    # - Add a new one
+    md["Notes"] = pd.Series()
+    
+    # Change Duration to timestamp in minutes for compatibility
     fmt = r"(\d?\d):(\d\d)"
     def reformat_time(s):
         a = s.split(":")
         return f"{a[0]}h {a[1]}m"
     md["Duration"] = md["Duration"].apply(reformat_time)
 
-    # For compatibility:
-    # - Remove unnecessary column
-    # - Add a new one
-    md["Notes"] = pd.Series()
     
-    # Read cdv journal
+    # Read cdv-source journal
     csv = pd.read_csv(csv_file, index_col="Date")
 
-    # Prepare date for md source
+    # Prepare md-source dates 
     date = csv.index.min()
     n_rows = md.shape[0]
     dates = pd.date_range(end=date,
