@@ -2,7 +2,7 @@ import os
 import re
 import numpy as np
 import pandas as pd
-import md_extract as mext
+import md_extract as mdext
 from contextlib import contextmanager
 
 
@@ -10,7 +10,7 @@ md_file = "raw_data/Sleep (Complete).md"
 csv_file = "raw_data/Sleep Log Journal Export.txt"
 
 
-with mext.MarkdownExtractor(md_file) as md:
+with mdext.extract_table(md_file) as md:
     # Rename columns
     md = md.rename(columns={
         "Gone to bed at": "Sleep Time" ,

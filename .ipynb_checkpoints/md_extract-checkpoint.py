@@ -1,29 +1,22 @@
 import re
 import pandas as pd
+import contextlib
 import markdown as md
 
 from bs4 import BeautifulSoup, NavigableString, Tag
 
 
-class MarkdownExtractor:
-    def __enter__(self):
-        return self.df
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.file.close()
-
-    def __init__(self, path):
-        self.file = open(path)
-        self.df = self.extract_table(self.file.read())
+@contextlib.contextmanager
+def extract_table(path):
+    """Extracts table data from markdown file.
     
-    def extract_table(self, md_table):
-        """Extracts data md_table markdown table.
-        
-        Args:
-            file: A sting
-        """
+    Args:
+        path: str -- path to the file including the name of the file.
+    """
+    file = open(path)
     
-        parsed_md = md.markdown(md_table)
+    try:
+        parsed_md = md.markdown(file.read())
     
         soup = BeautifulSoup(parsed_md, "lxml")
     
@@ -44,4 +37,6 @@ class MarkdownExtractor:
         header = [title.strip() for title in matches[0]]
         data = [[data.strip() for data in row] for row in matches[2:]]
     
-        return pd.DataFrame(data, columns=header)
+        yield pd.DataFrame(data, columns=header)
+    finally:
+        file.close()
