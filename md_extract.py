@@ -30,7 +30,6 @@ def extract_table(path):
                 if isinstance(nextNode, Tag):
                     parsed_md = nextNode.contents
         
-    
         pattern = r"\| (.*?) " * 4 + r"\|"
         matches = re.findall(pattern, parsed_md[0])
     

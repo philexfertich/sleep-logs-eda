@@ -2,7 +2,7 @@ import os
 import re
 import numpy as np
 import pandas as pd
-import md_extract as mdext
+import md_extract as mdex
 from contextlib import contextmanager
 
 
@@ -10,7 +10,7 @@ md_file = "raw_data/Sleep (Complete).md"
 csv_file = "raw_data/Sleep Log Journal Export.txt"
 
 
-with mdext.extract_table(md_file) as md:
+with mdex.extract_table(md_file) as md:
     # Rename columns
     md = md.rename(columns={
         "Gone to bed at": "Sleep Time" ,
@@ -47,17 +47,32 @@ with mdext.extract_table(md_file) as md:
     md = md.set_index("Date")
     del dates
 
-    # Prepare csv Sleep Time and Wake Time
-    fmt = '%I:%M %p'
-    for column in ["Sleep Time", "Wake Time"]:
-        csv[column] = pd.to_datetime(
-            csv[column],
+    # Prepare column names
+    cols = ["Sleep Time", "Wake Time"]
+    
+    # Format Sleep Time and Wake time of ms-source
+    fmt_1 = r"(\b\d\b):(\d\d)\s([A|P]M)"
+    fmt_2 = r"0\1:\2 \3"
+    for c in cols:
+        md[c] = md[c].apply(lambda s: re.sub(fmt_1, fmt_2, s))
+        # md[c] = pd.to_datetime(md[c], utc=True)
+    del fmt_1, fmt_2
+    
+    # Prepare Sleep Time and Wake Time of csv-source
+    for c in cols:
+        csv[c] = pd.to_datetime(
+            csv[c],
             format='%H:%M',
             errors='coerce'
-        ).dt.strftime(fmt)
+        ).dt.strftime('%I:%M %p')
+    del fmt, c, cols
 
-    del fmt, column
+    # Clear regex cache
     re.purge()
     
-    # Resulting table
-    table = pd.concat([csv, md])
+    # ===== Finalizing table =====
+    sleep_logs = pd.concat([csv, md])
+
+    # Convert types
+    sleep_logs.index = pd.to_datetime(sleep_logs.index)
+    sleep_logs["Duration"] = pd.to_timedelta(sleep_logs["Duration"])
