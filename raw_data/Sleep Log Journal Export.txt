@@ -1,4 +1,8 @@
 Date,Sleep Time,Wake Time,Duration,Notes
+2025-12-18,22:48,06:15,7h 27m,"Bad sleep. I felt dehydrated all night. Slight headache."
+2025-12-17,22:24,06:00,7h 36m,"Woke up easily, no any discomfort."
+2025-12-16,22:15,06:43,8h 28m,""
+2025-12-15,22:14,06:10,7h 56m,"Sleept well, no any pain or bad feeling.woke up more easier. Didn't drink caffeinated drinks after 10AM."
 2025-12-14,22:21,06:00,7h 39m,"Slept well. Sloght headache on wake up, but but it passed quickly"
 2025-12-13,23:15,06:10,6h 55m,"Snoozed alarm. Slept well."
 2025-12-12,00:05,06:00,5h 55m,"Easier waking up. Feel a little sleepy. Feel my sleep pattern is getting messed up. More active part of the day became evening."
