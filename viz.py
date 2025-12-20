@@ -4,8 +4,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-DEFAULT_DT = pd.to_datetime("1900-01-01")
-
 
 def get_bounds(df, c, l, h):
     return tuple(df.loc[[l, h], c])
@@ -25,19 +23,16 @@ def round_f(n, decimals, agg):
         raise ValueError("Aggregate function must be only ceil or floor.")
 
 
-def normalize_dt(s):
-    DAY_IN_SEC = 24 * 60**2
-    sec = s.seconds + s.days * DAY_IN_SEC
-    return sec / DAY_IN_SEC
-
-
 def theme_sleeptime_plt(ax, df):
     border = lambda v, c, agg: math.floor(round_f(df[c].min(), 1, agg) * 24) / 24 
     
-    lowest = border(df, 'Sleep Time', 'floor')
-    highest = border(df, 'Wake Time', 'ceil')
-    ticks = np.linspace(lowest, highest, 6)
-    labels = (DEFAULT_DT + pd.to_timedelta(ticks * 24 % 24, 'h')).strftime("%I:%M %p")
+    start = border(df, 'Sleep Time', 'floor')
+    end = border(df, 'Wake Time', 'ceil')
+    ticks = np.linspace(start, end, 6)
+    labels = (
+        pd.to_datetime("1900-01-01") + 
+        pd.to_timedelta(ticks * 24 % 24, 'h')
+    ).strftime("%I:%M %p")
     
     ax.set_yticks(ticks, labels)
     ax.set_title("Sleep Time of the year")
