@@ -2,8 +2,48 @@ import os
 import re
 import numpy as np
 import pandas as pd
-import md_extract as mdex
+import re
+import pandas as pd
+import contextlib
+import markdown as md
+
+from bs4 import BeautifulSoup, NavigableString, Tag
 from contextlib import contextmanager
+
+
+@contextlib.contextmanager
+def extract_table(path):
+    """Extracts table data from markdown file.
+    
+    Args:
+        path: str -- path to the file including the name of the file.
+    """
+    file = open(path)
+    
+    try:
+        parsed_md = md.markdown(file.read())
+    
+        soup = BeautifulSoup(parsed_md, "lxml")
+    
+        for header in soup.find_all("h1", string="Diary (Complete)"):
+            nextNode = header
+            
+            while True:
+                nextNode = nextNode.nextSibling
+                if nextNode is None:
+                    break
+                if isinstance(nextNode, Tag):
+                    parsed_md = nextNode.contents
+        
+        pattern = r"\| (.*?) " * 4 + r"\|"
+        matches = re.findall(pattern, parsed_md[0])
+    
+        header = [title.strip() for title in matches[0]]
+        data = [[data.strip() for data in row] for row in matches[2:]]
+    
+        yield pd.DataFrame(data, columns=header)
+    finally:
+        file.close()
 
 
 md_file = "raw_data/Sleep (Complete).md"
@@ -11,13 +51,8 @@ csv_file = "raw_data/Sleep Log Journal Export.txt"
 clean_file = "clean_data/sleep_logs.csv"
 
 
-def convert_types(df):
-    df.index = pd.to_datetime(df.index)
-    df["Duration"] = pd.to_timedelta(df["Duration"])
-
-
 def upd_file():
-    with mdex.extract_table(md_file) as md:
+    with extract_table(md_file) as md:
         # Rename columns
         md = md.rename(columns={
             "Gone to bed at": "Sleep Time" ,
@@ -79,9 +114,6 @@ def upd_file():
         
         # ===== Finalizing table =====
         sleep_logs = pd.concat([csv, md])
-    
-        # Convert types
-        convert_types(sleep_logs)
 
         # Write clean data
         if not os.path.isdir("clean_data"):
@@ -96,9 +128,11 @@ def get_clean_data():
         clean_file_m = os.path.getmtime(clean_file)
         check = lambda f: clean_file_m < os.path.getmtime(f)
         if check(md_file) or check(csv_file): upd_file()
-    sleep_logs = pd.read_csv(clean_file, index_col="Date")
-    convert_types(sleep_logs)
-    return sleep_logs
+    return pd.read_csv(clean_file, index_col="Date")
 
 
 sleep_logs = get_clean_data()
+sleep_logs.index = pd.to_datetime(sleep_logs.index)
+sleep_logs["Duration"] = pd.to_timedelta(sleep_logs["Duration"])
+
+sleep_logs = sleep_logs.sort_index()
