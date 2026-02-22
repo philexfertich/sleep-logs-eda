@@ -1,14 +1,14 @@
 import os
 import re
-import numpy as np
-import pandas as pd
-import re
-import pandas as pd
 import contextlib
+
+import numpy as np
+
+import pandas as pd
+
 import markdown as md
 
 from bs4 import BeautifulSoup, NavigableString, Tag
-from contextlib import contextmanager
 
 
 @contextlib.contextmanager
@@ -134,5 +134,4 @@ def get_clean_data():
 sleep_logs = get_clean_data()
 sleep_logs.index = pd.to_datetime(sleep_logs.index)
 sleep_logs["Duration"] = pd.to_timedelta(sleep_logs["Duration"])
-
 sleep_logs = sleep_logs.sort_index()
