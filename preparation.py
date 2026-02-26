@@ -52,7 +52,7 @@ def upd_file():
         # Prepare column names
         cols = ["Sleep Time", "Wake Time"]
         
-        # Format Sleep Time and Wake time of ms-source
+        # Format Sleep Time and Wake time of md-source
         fmt_1 = r"(\b\d\b):(\d\d)\s([A|P]M)"
         fmt_2 = r"0\1:\2 \3"
         for c in cols:

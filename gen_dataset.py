@@ -9,11 +9,11 @@ class GenDatasetStrategy(ABC):
         raise NotImplementedError
 
 
-class Dataset:
+class Dataset(ABC):
     def __init__(self, gen_dataset_strategy: GenDatasetStrategy):
         self.gen_dataset_strategy = gen_dataset_strategy
     
-    def get_dataset(self, path):
+    def get_dataset(self, path) -> pd.DataFrame:
         return self.gen_dataset_strategy.gen_dataset(path)
     
     def set_strategy(self, gen_dataset_strategy: GenDatasetStrategy):
