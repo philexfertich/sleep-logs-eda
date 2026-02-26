@@ -1,4 +1,5 @@
 import re
+import logging
 
 import pandas as pd
 
@@ -8,6 +9,13 @@ from bs4 import BeautifulSoup, Tag
 from markdown import markdown
 
 from gen_dataset import GenDatasetStrategy, Dataset
+
+
+logger = logging.getLogger(__name__)
+
+
+class TableNotFoundError(Exception):
+    pass
 
 
 class GenFromMarkdown(GenDatasetStrategy):
@@ -32,6 +40,8 @@ class GenFromMarkdown(GenDatasetStrategy):
             p = p.with_suffix('.md')
         else:
             p = p.with_suffix('.markdown')
+        
+        logging.info(f"File {p} found.")
 
         # Extract data from the file
         with open(p) as f:
@@ -48,19 +58,27 @@ class GenFromMarkdown(GenDatasetStrategy):
                         break
                     if isinstance(nextNode, Tag):
                         parsed_md = nextNode.contents
+                        logging.info('Table found')
             
-            pattern = r"\| (.*?) " * 4 + r"\|"
-            matches = re.findall(pattern, parsed_md[0])
+            c = re.compile(r"\| (.*?) " * 4 + r"\|")
+            matches = c.findall(parsed_md[0])
         
             header = [title.strip() for title in matches[0]]
-            data = [[data.strip() for data in row] for row in matches[2:]]
-        
+            # data = [[data.strip() for data in row] for row in matches[2:]]
+            data = []
+            for row in matches[2:]:
+                data.append([data.strip() for data in row])
+                logging.info(f'Row added: {row}')
+
             return pd.DataFrame(data, columns=header)
                 
             
 class DatasetMarkdown(Dataset):
     def get_dataset(self, path):
+        logger.info('Parsing started.')
+
         df = super().get_dataset(path)
+        
         # Rename columns
         df = df.rename(columns={
             "Gone to bed at": "Sleep Time" ,
@@ -73,6 +91,8 @@ class DatasetMarkdown(Dataset):
         # - Remove unnecessary column
         # - Add a new one
         df["Notes"] = pd.Series()
+
+        logger.info(f'Columns Prepared {df.columns.to_list()}.')
         
         # Change Duration to timestamp in minutes for compatibility
         fmt = r"(\d?\d):(\d\d)"
@@ -80,6 +100,8 @@ class DatasetMarkdown(Dataset):
             a = s.split(":")
             return f"{a[0]}h {a[1]}m"
         df["Duration"] = df["Duration"].apply(reformat_time)
+
+        logger.info('Duration formatted.')
 
         # Prepare column names
         cols = ["Sleep Time", "Wake Time"]
@@ -92,6 +114,9 @@ class DatasetMarkdown(Dataset):
             # md[c] = pd.to_datetime(md[c], utc=True)
         del fmt_1, fmt_2
 
+        logger.info('Sleep Time and Wake Time formatted.')
+        logger.info(f'Parsing finished. Resuling in \n{df.head()}')
+
         return df
 
 
@@ -99,6 +124,7 @@ MD_FILE = "raw_data/Sleep (Complete).markdown"
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     ds = DatasetMarkdown(GenFromMarkdown())
 
-    print(ds.get_dataset(MD_FILE).info())
+    ds.get_dataset(MD_FILE)
