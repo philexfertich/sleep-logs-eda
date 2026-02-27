@@ -27,14 +27,13 @@ def upd_file():
         md["Notes"] = pd.Series()
         
         # Change Duration to timestamp in minutes for compatibility
-        fmt = r"(\d?\d):(\d\d)"
         def reformat_time(s):
             a = s.split(":")
             return f"{a[0]}h {a[1]}m"
         md["Duration"] = md["Duration"].apply(reformat_time)
     
         
-        # Read cdv-source journal
+        # Read csv-source journal
         csv = pd.read_csv(csv_file, index_col="Date")
     
         # Prepare md-source dates 
@@ -67,7 +66,7 @@ def upd_file():
                 format='%H:%M',
                 errors='coerce'
             ).dt.strftime('%I:%M %p')
-        del fmt, c, cols
+        del c, cols
     
         # Clear regex cache
         re.purge()

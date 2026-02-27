@@ -2,13 +2,15 @@ import re
 import logging
 
 import pandas as pd
+import numpy as np
 
 from pathlib import Path
+from datetime import datetime
 
 from bs4 import BeautifulSoup, Tag
 from markdown import markdown
 
-from gen_dataset import GenDatasetStrategy, Dataset
+from gen_dataset import ExtractionStrategy, Dataset
 
 
 logger = logging.getLogger(__name__)
@@ -18,8 +20,8 @@ class TableNotFoundError(Exception):
     pass
 
 
-class GenFromMarkdown(GenDatasetStrategy):
-    def gen_dataset(self, path):
+class FromMyMarkdown(ExtractionStrategy):
+    def extract(self, path, **kwargs):
         """Extracts table data from markdown file.
     
         Args:
@@ -32,7 +34,7 @@ class GenFromMarkdown(GenDatasetStrategy):
         if not p.suffix in ['.md', '.markdown']:
             raise ValueError(
                     "Your file does not lead to a markdown file. " \
-                    "Change your file to `.md` or `markdown`"
+                    "Change your file to `.md` or `.markdown`"
                 )
 
         # Check if file with one of suffixes is exist and format to right one
@@ -73,11 +75,24 @@ class GenFromMarkdown(GenDatasetStrategy):
             return pd.DataFrame(data, columns=header)
                 
             
-class DatasetMarkdown(Dataset):
-    def get_dataset(self, path):
+class MyMarkdownDataset(Dataset):
+    def get_dataset(self, /, path: Path | str = None, **kwargs):
+        if not 'last_date' in kwargs:
+            raise KeyError('Key `last_date` not found.') 
+        
         logger.info('Parsing started.')
 
-        df = super().get_dataset(path)
+        df = super().get_dataset(path, **kwargs)
+
+        # Prepare Date
+        date = kwargs['last_date']
+        n_rows = df.shape[0]
+        dates = pd.date_range(end=date,
+                              inclusive='neither',
+                              periods=n_rows + 1, unit='s')
+    
+        df["Date"] = pd.to_datetime(pd.Series(dates)).dt.strftime("%Y-%m-%d")
+        df = df.set_index("Date")
         
         # Rename columns
         df = df.rename(columns={
@@ -116,6 +131,9 @@ class DatasetMarkdown(Dataset):
 
         logger.info('Sleep Time and Wake Time formatted.')
         logger.info(f'Parsing finished. Resuling in \n{df.head()}')
+        
+        # Clear regex cache
+        re.purge()
 
         return df
 
@@ -125,6 +143,10 @@ MD_FILE = "raw_data/Sleep (Complete).markdown"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    ds = DatasetMarkdown(GenFromMarkdown())
+    ds = MyMarkdownDataset(FromMyMarkdown())
 
-    ds.get_dataset(MD_FILE)
+    ds.get_dataset(path=MD_FILE, last_date='2025-10-27')
+
+    ds.set_path(MD_FILE)
+    ds.get_dataset(last_date='2025-10-27')
+    

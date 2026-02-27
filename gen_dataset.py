@@ -1,20 +1,35 @@
 import pandas as pd
 
+from pathlib import Path
 from abc import ABC, abstractmethod
 
 
-class GenDatasetStrategy(ABC):
+class PathNotSetError(Exception): 
+    pass
+
+
+class ExtractionStrategy(ABC):
     @abstractmethod
-    def gen_dataset(self, path) -> pd.DataFrame:
+    def extract(self, path: Path | str, **kwargs) -> pd.DataFrame:
         raise NotImplementedError
 
 
 class Dataset(ABC):
-    def __init__(self, gen_dataset_strategy: GenDatasetStrategy):
-        self.gen_dataset_strategy = gen_dataset_strategy
+    def __init__(self, gen_dataset_strategy: ExtractionStrategy, path: Path | str = None):
+        self.extraction_strategy = gen_dataset_strategy
+        self.path = path
     
-    def get_dataset(self, path) -> pd.DataFrame:
-        return self.gen_dataset_strategy.gen_dataset(path)
-    
-    def set_strategy(self, gen_dataset_strategy: GenDatasetStrategy):
-        self.gen_dataset_strategy = gen_dataset_strategy
+    def get_dataset(self, /, path: Path | str = None, **kwargs) -> pd.DataFrame:
+        if not (self.path or path):
+            raise PathNotSetError("Please set the path to find the file.")
+        
+        return self.extraction_strategy.extract(
+            (path if path else self.path),
+            **kwargs
+        )
+            
+    def set_strategy(self, gen_dataset_strategy: ExtractionStrategy):
+        self.extraction_strategy = gen_dataset_strategy
+
+    def set_path(self, path: Path | str):
+        self.path = path
