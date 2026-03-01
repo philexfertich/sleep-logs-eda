@@ -66,13 +66,14 @@ class FromMyMarkdown(ExtractionStrategy):
             matches = c.findall(parsed_md[0])
         
             header = [title.strip() for title in matches[0]]
-            # data = [[data.strip() for data in row] for row in matches[2:]]
             data = []
             for row in matches[2:]:
                 data.append([data.strip() for data in row])
                 logging.info(f'Row added: {row}')
-
-            return pd.DataFrame(data, columns=header)
+            df = pd.DataFrame(data, columns=header)
+            logger.info(f'Fetching completed:\n{df.head()}')
+            
+            return df
                 
             
 class MyMarkdownDataset(Dataset):
@@ -82,61 +83,71 @@ class MyMarkdownDataset(Dataset):
         
         logger.info('Parsing started.')
 
-        df = super().get_dataset(path, **kwargs)
+        self.data = super().get_dataset(path, **kwargs)
+        
+        self._format_datetime(kwargs['last_date'])
+        self._format_columns()
+        self._format_durations()
+        self._format_times()
 
+        return self.data
+    
+    def _format_datetime(self, date):
         # Prepare Date
-        date = kwargs['last_date']
-        n_rows = df.shape[0]
+        
+        n_rows = self.data.shape[0]
         dates = pd.date_range(end=date,
                               inclusive='neither',
                               periods=n_rows + 1, unit='s')
-    
-        df["Date"] = pd.to_datetime(pd.Series(dates)).dt.strftime("%Y-%m-%d")
-        df = df.set_index("Date")
+        self.data["Date"] = (
+            pd
+            .to_datetime(pd.Series(dates))
+            .dt.strftime("%Y-%m-%d")
+        )
+        self.data = self.data.set_index("Date")
+        logger.info(f'Date index prepared: {self.data.head().index}')
         
-        # Rename columns
-        df = df.rename(columns={
+    
+    def _format_columns(self):
+        # TODO Restructure
+        # Format column names and
+        columns ={
             "Gone to bed at": "Sleep Time" ,
             "Woke up at": "Wake Time",
             "Sleep time": "Duration",
-            "Stage": "Notes"
-        })
-    
-        # For compatibility:
-        # - Remove unnecessary column
-        # - Add a new one
-        df["Notes"] = pd.Series()
+        }
+        self.data = (
+            self.data
+            .rename(columns=columns)
+            .drop(columns='Stage')
+        )
+        self.data["Notes"] = pd.Series()
+        logger.info(f'Columns Prepared {self.data.columns.to_list()}.')
 
-        logger.info(f'Columns Prepared {df.columns.to_list()}.')
-        
+    def _format_durations(self):
+        # TODO Decide to restructure it and leave, or make it generic from Wake Time and Sleep time. 
         # Change Duration to timestamp in minutes for compatibility
-        fmt = r"(\d?\d):(\d\d)"
         def reformat_time(s):
             a = s.split(":")
             return f"{a[0]}h {a[1]}m"
-        df["Duration"] = df["Duration"].apply(reformat_time)
-
+        
+        self.data["Duration"] = pd.to_timedelta(
+            self.data["Duration"].apply(reformat_time)
+        )
         logger.info('Duration formatted.')
 
-        # Prepare column names
-        cols = ["Sleep Time", "Wake Time"]
-        
+    def _format_times(self):
         # Format Sleep Time and Wake time of md-source
+        # TODO Restrucutre the code to make it more cleaner
         fmt_1 = r"(\b\d\b):(\d\d)\s([A|P]M)"
         fmt_2 = r"0\1:\2 \3"
-        for c in cols:
-            df[c] = df[c].apply(lambda s: re.sub(fmt_1, fmt_2, s))
-            # md[c] = pd.to_datetime(md[c], utc=True)
-        del fmt_1, fmt_2
+        for c in ["Sleep Time", "Wake Time"]:
+            self.data[c] = self.data[c].apply(lambda s: re.sub(fmt_1, fmt_2, s))
+            self.data[c] = pd.to_datetime(self.data[c], utc=True, format="%I:%M %p")
 
         logger.info('Sleep Time and Wake Time formatted.')
-        logger.info(f'Parsing finished. Resuling in \n{df.head()}')
+        logger.info(f'Parsing finished. Resuling in \n{self.data.head()}')
         
-        # Clear regex cache
-        re.purge()
-
-        return df
-
 
 MD_FILE = "raw_data/Sleep (Complete).markdown"
 
@@ -148,5 +159,6 @@ if __name__ == "__main__":
     ds.get_dataset(path=MD_FILE, last_date='2025-10-27')
 
     ds.set_path(MD_FILE)
-    ds.get_dataset(last_date='2025-10-27')
+    ds.get_dataset(last_date='2025-10-27').info()
+
     
