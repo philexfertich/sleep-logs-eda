@@ -85,16 +85,18 @@ class MyMarkdownDataset(Dataset):
 
         self.data = super().get_dataset(path, **kwargs)
         
-        self._format_datetime(kwargs['last_date'])
-        self._format_columns()
-        self._format_durations()
+        self._generate_dates(kwargs['last_date'])
+        self._restructure_table()
         self._format_times()
+        self._format_durations()
+
+        logger.info(f'Parsing finished. Resuling in \n{self.data.head()}')
 
         return self.data
     
-    def _format_datetime(self, date):
+    def _generate_dates(self, date):
+        # TODO Change method for dates generation
         # Prepare Date
-        
         n_rows = self.data.shape[0]
         dates = pd.date_range(end=date,
                               inclusive='neither',
@@ -106,10 +108,8 @@ class MyMarkdownDataset(Dataset):
         )
         self.data = self.data.set_index("Date")
         logger.info(f'Date index prepared: {self.data.head().index}')
-        
     
-    def _format_columns(self):
-        # TODO Restructure
+    def _restructure_table(self):
         # Format column names and
         columns ={
             "Gone to bed at": "Sleep Time" ,
@@ -125,7 +125,6 @@ class MyMarkdownDataset(Dataset):
         logger.info(f'Columns Prepared {self.data.columns.to_list()}.')
 
     def _format_durations(self):
-        # TODO Decide to restructure it and leave, or make it generic from Wake Time and Sleep time. 
         # Change Duration to timestamp in minutes for compatibility
         def reformat_time(s):
             a = s.split(":")
@@ -138,15 +137,13 @@ class MyMarkdownDataset(Dataset):
 
     def _format_times(self):
         # Format Sleep Time and Wake time of md-source
-        # TODO Restrucutre the code to make it more cleaner
-        fmt_1 = r"(\b\d\b):(\d\d)\s([A|P]M)"
-        fmt_2 = r"0\1:\2 \3"
-        for c in ["Sleep Time", "Wake Time"]:
-            self.data[c] = self.data[c].apply(lambda s: re.sub(fmt_1, fmt_2, s))
-            self.data[c] = pd.to_datetime(self.data[c], utc=True, format="%I:%M %p")
+        def format_time(s):
+            logger.info(f'{s.name} column formating...')
+            return  pd.to_datetime(s, utc=True, format="%I:%M %p")
+        cols = ['Sleep Time', 'Wake Time']
+        self.data[cols] = self.data[cols].apply(format_time)
 
         logger.info('Sleep Time and Wake Time formatted.')
-        logger.info(f'Parsing finished. Resuling in \n{self.data.head()}')
         
 
 MD_FILE = "raw_data/Sleep (Complete).markdown"
