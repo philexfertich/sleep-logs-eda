@@ -71,6 +71,7 @@ class FromMyMarkdown(ExtractionStrategy):
                 data.append([data.strip() for data in row])
                 logging.info(f'Row added: {row}')
             df = pd.DataFrame(data, columns=header)
+            
             logger.info(f'Fetching completed:\n{df.head()}')
             
             return df
@@ -81,7 +82,7 @@ class MyMarkdownDataset(Dataset):
         if not 'last_date' in kwargs:
             raise KeyError('Key `last_date` not found.') 
         
-        logger.info('Parsing started.')
+        logger.info('Formatting started.')
 
         self.data = super().get_dataset(path, **kwargs)
         
