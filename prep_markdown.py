@@ -10,7 +10,7 @@ from datetime import datetime
 from bs4 import BeautifulSoup, Tag
 from markdown import markdown
 
-from gen_dataset import ExtractionStrategy, Dataset
+from gen_dataset import SleepLogsParserStrategy, Dataset
 
 
 logger = logging.getLogger(__name__)
@@ -20,8 +20,8 @@ class TableNotFoundError(Exception):
     pass
 
 
-class FromMyMarkdown(ExtractionStrategy):
-    def extract(self, path, **kwargs):
+class FromMyMarkdown(SleepLogsParserStrategy):
+    def __extract__(self, path, **kwargs):
         """Extracts table data from markdown file.
     
         Args:
@@ -75,10 +75,8 @@ class FromMyMarkdown(ExtractionStrategy):
             logger.info(f'Fetching completed:\n{df.head()}')
             
             return df
-                
-            
-class MyMarkdownDataset(Dataset):
-    def get_dataset(self, /, path: Path | str = None, **kwargs):
+    
+    def __prepare__(self, /, path: Path | str = None, **kwargs):
         if not 'last_date' in kwargs:
             raise KeyError('Key `last_date` not found.') 
         
@@ -145,18 +143,13 @@ class MyMarkdownDataset(Dataset):
         self.data[cols] = self.data[cols].apply(format_time)
 
         logger.info('Sleep Time and Wake Time formatted.')
-        
+
 
 MD_FILE = "raw_data/Sleep (Complete).markdown"
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    ds = MyMarkdownDataset(FromMyMarkdown())
-
-    ds.get_dataset(path=MD_FILE, last_date='2025-10-27')
-
-    ds.set_path(MD_FILE)
-    ds.get_dataset(last_date='2025-10-27').info()
-
-    
+    df = FromMyMarkdown().get_dataset(path=MD_FILE, last_date='2025-10-27')
+    print(df.head())
+    df.info()    
