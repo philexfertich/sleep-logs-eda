@@ -33,12 +33,11 @@ DistType = Literal['separate', 'unify', 'both']
 
 STRUCTURE = ['Date', 'Sleep Time', 'Wake Time', 'Duration', 'Notes']
 DEFAULT_OUTPUT_DIR = 'dataset/'
-DEFAULT_FILENAME_SEP = 'sleep-logs-cluster'
-DEFAULT_FILENAME_SEP = 'sleep=logs-dataset'
+DEFAULT_FILENAME = 'sleep-logs'
 
 
 class Dataset:
-    def __init__(self, distribution: DistType = None, output_dir: str = None):
+    def __init__(self, distribution: DistType = 'unify', output_dir: str = None):
         self.distribution = distribution
         self.ouput_dir = output_dir
 
@@ -48,21 +47,22 @@ class Dataset:
     def __call__(
         self,
         *args: FileMeta,
-        save: bool = False,
-        distribution: DistType = 'unify',
+        distribution: DistType | None = None,
         name_pattern: str = None,
         output_dir: str = DEFAULT_OUTPUT_DIR
     ):
         output_dir = output_dir.strip('/')
         
         p = Path(output_dir)
-        if save and distribution == 'separate':
+        
+        distr = distribution or self.distribution
+        if distr == 'separate':
             (p / 'clusters').mkdir(parents=True, exist_ok=True)
         else:
             p.mkdir(exist_ok=True)
         del p
 
-        file_name = name_pattern if name_pattern else DEFAULT_FILENAME_SEP
+        file_name = name_pattern if name_pattern else DEFAULT_FILENAME
         
         df = pd.DataFrame(columns=STRUCTURE)        
 
@@ -73,9 +73,9 @@ class Dataset:
             new = strategy().__prepare__(path, **kwargs)
             df = pd.concat([df, new])
 
-            if save and distribution in ['separate', 'both']:
+            if distr in ['separate', 'both']:
                 self.__save__(df, f'{output_dir}/clusters/{file_name}-{i}.csv')
                 i += 1
         
-        if save and distribution in ['unify', 'both']:
+        if distr in ['unify', 'both']:
             self.__save__(df, f'{output_dir}/{file_name}.csv')
