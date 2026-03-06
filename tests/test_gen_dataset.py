@@ -2,7 +2,7 @@ import unittest
 import pandas as pd
 
 from pathlib import Path
-import gen_dataset as gds
+import parsers.gen_dataset as gds
 
 
 class GenDatasetTest(unittest.TestCase):

@@ -10,7 +10,7 @@ from datetime import datetime
 from bs4 import BeautifulSoup, Tag
 from markdown import markdown
 
-from gen_dataset import SleepLogsParserStrategy, Dataset
+from parsers.gen_dataset import SleepLogsParserStrategy, Dataset
 
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ class TableNotFoundError(Exception):
     pass
 
 
-class FromMyMarkdown(SleepLogsParserStrategy):
+class ParserMarkdown(SleepLogsParserStrategy):
     def __extract__(self, path, **kwargs):
         """Extracts table data from markdown file.
     
@@ -82,7 +82,7 @@ class FromMyMarkdown(SleepLogsParserStrategy):
         
         logger.info('Formatting started.')
 
-        self.data = super().get_dataset(path, **kwargs)
+        self.data = super().__prepare__(path, **kwargs)
         
         self._generate_dates(kwargs['last_date'])
         self._restructure_table()
@@ -105,7 +105,7 @@ class FromMyMarkdown(SleepLogsParserStrategy):
             .to_datetime(pd.Series(dates))
             .dt.strftime("%Y-%m-%d")
         )
-        self.data = self.data.set_index("Date")
+        # self.data = self.data.set_index("Date")
         logger.info(f'Date index prepared: {self.data.head().index}')
     
     def _restructure_table(self):
@@ -150,6 +150,6 @@ MD_FILE = "raw_data/Sleep (Complete).markdown"
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    df = FromMyMarkdown().get_dataset(path=MD_FILE, last_date='2025-10-27')
+    df = ParserMarkdown().__prepare__(path=MD_FILE, last_date='2025-10-27')
     print(df.head())
-    df.info()    
+    df.info()
