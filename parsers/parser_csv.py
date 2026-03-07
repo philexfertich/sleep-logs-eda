@@ -29,7 +29,7 @@ class ParserCSV(SleepLogsParserStrategy):
         logger.info(f'File {p} found.')
 
         # Read csv-source journal
-        df = pd.read_csv(p)
+        df = pd.read_csv(p, parse_dates=[0], date_format='%Y-%m-%d')
 
         logger.info(f'Fetching completed:\n{df.head()}')
 
@@ -40,11 +40,18 @@ class ParserCSV(SleepLogsParserStrategy):
         
         logger.info('Preparation started.')
 
-        cols = ["Sleep Time", "Wake Time"]
-        self.data[cols] = self.data[cols].apply(lambda s: pd.to_datetime(s, format="%H:%M"))
-        self.data["Duration"] = pd.to_timedelta(self.data["Duration"])
+        def to_timestamp(col):
+            self.data[col] = self.data['Date'].dt.strftime(date_format='%Y-%m-%d') + " " + self.data[col]
+            self.data[col] = pd.to_datetime(self.data[col])
+
+        for col in ['Sleep Time', 'Wake Time']:
+            to_timestamp(col)
         
-        logger.info('Preparation ended.')
+        self.data.loc[self.data['Wake Time'] < self.data['Sleep Time'], 'Sleep Time'] -= pd.Timedelta('1d')
+        
+        del self.data['Date']
+
+        logger.info('Preparation finished.')
 
         return self.data
 

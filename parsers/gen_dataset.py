@@ -31,7 +31,7 @@ FileMeta = tuple[
 DistType = Literal['separate', 'unify', 'both']
 
 
-STRUCTURE = ['Date', 'Sleep Time', 'Wake Time', 'Duration', 'Notes']
+STRUCTURE = ['Sleep Time', 'Wake Time', 'Duration', 'Notes']
 DEFAULT_OUTPUT_DIR = 'dataset/'
 DEFAULT_FILENAME = 'sleep-logs'
 
@@ -70,7 +70,7 @@ class Dataset:
 
             self.data = pd.concat([self.data, new])
         
-        self.data = self.data.sort_values(by='Date', axis=0)
+        self.data = self.data.sort_values(by=['Wake Time', 'Sleep Time'], axis=0)
    
         if save:
             self.__save__(f'{output_dir}/{file_name}.csv')
@@ -86,7 +86,20 @@ if __name__ == '__main__':
         (ParserCSV, 'raw_data/Sleep Log Journal Export.txt', {}),
         (ParserMarkdown, 'raw_data/Sleep (Complete).md', {'last_date': '2025-10-27' },)
     ]
-    ds = Dataset()
+
+    class MyDataset(Dataset):
+        def __call__(
+            self, 
+            *args, 
+            name_pattern = None, 
+            output_dir = DEFAULT_OUTPUT_DIR, 
+            save = False
+        ):
+            super().__call__(*args, name_pattern=name_pattern, output_dir=output_dir, save=save)
+            self.data['Duration'] = self.data['Wake Time'] - self.data['Sleep Time']
+
+            return self.data
+    ds = MyDataset()
     df = ds(*meta, save=True)
     df.info()
     print(df.head())

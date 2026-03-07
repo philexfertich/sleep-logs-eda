@@ -84,29 +84,13 @@ class ParserMarkdown(SleepLogsParserStrategy):
 
         self.data = super().__prepare__(path, **kwargs)
         
-        self._generate_dates(kwargs['last_date'])
         self._restructure_table()
-        self._format_times()
+        self._format_times(kwargs['last_date'])
         self._format_durations()
 
         logger.info(f'Parsing finished. Resuling in \n{self.data.head()}')
 
         return self.data
-    
-    def _generate_dates(self, date):
-        # TODO Change method for dates generation
-        # Prepare Date
-        n_rows = self.data.shape[0]
-        dates = pd.date_range(end=date,
-                              inclusive='neither',
-                              periods=n_rows + 1, unit='s')
-        self.data["Date"] = (
-            pd
-            .to_datetime(pd.Series(dates))
-            .dt.strftime("%Y-%m-%d")
-        )
-        # self.data = self.data.set_index("Date")
-        logger.info(f'Date index prepared: {self.data.head().index}')
     
     def _restructure_table(self):
         # Format column names and
@@ -134,15 +118,29 @@ class ParserMarkdown(SleepLogsParserStrategy):
         )
         logger.info('Duration formatted.')
 
-    def _format_times(self):
-        # Format Sleep Time and Wake time of md-source
-        def format_time(s):
-            logger.info(f'{s.name} column formating...')
-            return  pd.to_datetime(s, utc=True, format="%I:%M %p")
-        cols = ['Sleep Time', 'Wake Time']
-        self.data[cols] = self.data[cols].apply(format_time)
+    def _format_times(self, date):
+        dates = (
+            pd
+            .date_range(
+                end=date, 
+                inclusive='neither', 
+                periods=self.data.shape[0]+1, 
+                unit='s'
+            )
+            .strftime("%Y-%m-%d")
+        )
+        logger.info(dates)
+        
+        def to_timestamp(col):
+            self.data[col] = dates + " " + self.data[col]
+            self.data[col] = pd.to_datetime(self.data[col])
 
+        for col in ['Sleep Time', 'Wake Time']:
+            to_timestamp(col)
+        
         logger.info('Sleep Time and Wake Time formatted.')
+
+        self.data.loc[self.data['Wake Time'] < self.data['Sleep Time'], 'Sleep Time'] -= pd.Timedelta('1d')
 
 
 MD_FILE = "raw_data/Sleep (Complete).markdown"
@@ -151,5 +149,5 @@ MD_FILE = "raw_data/Sleep (Complete).markdown"
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     df = ParserMarkdown().__prepare__(path=MD_FILE, last_date='2025-10-27')
-    print(df.head())
+    print(df)
     df.info()
