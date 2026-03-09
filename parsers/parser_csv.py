@@ -29,7 +29,12 @@ class ParserCSV(SleepLogsParserStrategy):
         logger.info(f'File {p} found.')
 
         # Read csv-source journal
-        df = pd.read_csv(p, parse_dates=[0], date_format='%Y-%m-%d')
+        df = pd.read_csv(
+            p, 
+            parse_dates=[0], 
+            date_format='%Y-%m-%d',
+            converters={'Duration': pd.to_timedelta}
+        )
 
         logger.info(f'Fetching completed:\n{df.head()}')
 
