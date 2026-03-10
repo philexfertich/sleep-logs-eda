@@ -1,1 +1,19 @@
-{"metadata":{"kernelspec":{"language":"python","display_name":"Python 3","name":"python3"},"language_info":{"name":"python","version":"3.12.12","mimetype":"text/x-python","codemirror_mode":{"name":"ipython","version":3},"pygments_lexer":"ipython3","nbconvert_exporter":"python","file_extension":".py"},"kaggle":{"accelerator":"none","dataSources":[{"sourceType":"datasetVersion","sourceId":15107199,"datasetId":9653004,"databundleVersionId":15993352}],"dockerImageVersionId":31286,"isInternetEnabled":true,"language":"python","sourceType":"script","isGpuEnabled":false}},"nbformat_minor":4,"nbformat":4,"cells":[{"cell_type":"code","source":"# %% [code]\nimport kagglehub\nimport pandas as pd\n\nfrom kagglehub import KaggleDatasetAdapter\n\n\ndef get_sleep_data():\n    return kagglehub.dataset_load(\n        KaggleDatasetAdapter.PANDAS,\n        'philexfertich/personal-sleep-tracking-and-quality-logs',\n        \"sleep-logs.csv\",\n        pandas_kwargs={\n            'parse_dates': ['Sleep Time', 'Wake Time'],\n            'date_format': r'%Y-%m-%d %H:%M:%S',\n            'converters': {'Duration': pd.to_timedelta}\n        }\n    )","metadata":{"_uuid":"d2c57d3d-78aa-40bd-8565-5a4a983d560f","_cell_guid":"f8c162bb-f13a-4b58-b66a-1982a2cc9f66","trusted":true,"collapsed":false,"jupyter":{"outputs_hidden":false}},"outputs":[],"execution_count":null}]}
+import kagglehub
+import pandas as pd
+
+from kagglehub import KaggleDatasetAdapter
+
+
+df: pd.DataFrame = kagglehub.dataset_load(
+    KaggleDatasetAdapter.PANDAS,
+    'philexfertich/personal-sleep-tracking-and-quality-logs',
+    "sleep-logs.csv",
+    pandas_kwargs={
+        'parse_dates': ['Sleep Time', 'Wake Time'],
+        'date_format': r'%Y-%m-%d %H:%M:%S',
+        'converters': {'Duration': pd.to_timedelta}
+    }
+)
+
+print(df)
+df.info()
